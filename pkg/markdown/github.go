@@ -17,6 +17,9 @@ import (
 //   - https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
 //   - https://docs.slack.dev/messaging/formatting-message-text/
 func GitHubToSlack(ctx workflow.Context, text, prURL string) string {
+	// Strip Slack-only emoji skin tone suffixes early.
+	text = stripSlackEmojiSkinTones(text)
+
 	// Before list styling, because our fake lists rely on whitespace prefixes.
 	text = gitHubToSlackWhitespaces(text)
 	// Before text styling, to prevent confusion in "*"-based bullets with text that contains "*" characters.
@@ -72,7 +75,10 @@ func gitHubToSlackLists(text string) string {
 
 func gitHubToSlackTextStyles(text string) string {
 	// Bold and italic text together: "*** ... ***" --> "_* ... *_".
-	text = regexp.MustCompile(`\*\*\*(.+?)\*\*\*`).ReplaceAllString(text, "_@REVCHAT-TEMP-BOLD@${1}@REVCHAT-TEMP-BOLD@_")
+	text = regexp.MustCompile(`\*\*\*(.+?)\*\*\*`).ReplaceAllString(
+		text,
+		"_@REVCHAT-TEMP-BOLD@${1}@REVCHAT-TEMP-BOLD@_",
+	)
 
 	// Bold text: "**" or "__" --> "*".
 	text = regexp.MustCompile(`\*\*(.+?)\*\*`).ReplaceAllString(text, "@REVCHAT-TEMP-BOLD@${1}@REVCHAT-TEMP-BOLD@")
@@ -102,11 +108,6 @@ func gitHubToSlackWhitespaces(text string) string {
 }
 
 // SlackToGitHub converts Slack markdown text into GitHub markdown text.
-//
-// Based on:
-//   - https://docs.slack.dev/messaging/formatting-message-text/
-//   - https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
-//   - https://docs.slack.dev/messaging/formatting-message-text/
 func SlackToGitHub(_ workflow.Context, text string) string {
-	return text
+	return stripSlackEmojiSkinTones(text)
 }
